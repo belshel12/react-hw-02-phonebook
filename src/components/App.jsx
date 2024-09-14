@@ -1,76 +1,58 @@
-import { Component } from "react";
+import { useEffect, useState } from "react";
 import initialContacts from "../contacts.json";
 import Filter from "./Filter/Filter";
 import ContactList from "./ContactList/ContactList";
 import ContactForm from "./ContactForm/ContactForm";
 import toast, { Toaster } from "react-hot-toast";
 
-class App extends Component {
-  state = {
-    contacts: [],
-    filter: "",
-  };
+const App = () => {
+  const [contacts, setContacts] = useState(() => {
+    return JSON.parse(localStorage.getItem("contacts")) ?? initialContacts;
+  });
+  const [filter, setFilter] = useState("");
 
-  componentDidMount() {
-    const localContacts = localStorage.getItem("contacts");
-    const parsedContacts = JSON.parse(localContacts);
+  useEffect(() => {
+    localStorage.setItem("contacts", JSON.stringify(contacts));
+  }, [contacts]);
 
-    !parsedContacts
-      ? this.setState({ contacts: initialContacts })
-      : this.setState({ contacts: parsedContacts });
-  }
-
-  componentDidUpdate() {
-    localStorage.setItem("contacts", JSON.stringify(this.state.contacts));
-  }
-
-  createContact = (newUser) => {
-    this.state.contacts.some(
+  const createContact = (newUser) => {
+    contacts.some(
       ({ name }) =>
         name.toLocaleLowerCase() === newUser.name.toLocaleLowerCase()
     )
       ? toast.error(`${newUser.name} is already in contacts.`)
-      : this.setState((prev) => ({
-          contacts: [...prev.contacts, newUser],
-        }));
+      : setContacts([...contacts, newUser]);
   };
 
-  getFilterData = (data) => {
-    this.setState({ filter: data });
+  const getFilterData = (data) => {
+    setFilter(data);
   };
 
-  handleDelete = (id) => {
-    this.setState((prev) => ({
-      contacts: prev.contacts.filter((contact) => {
-        return id !== contact.id;
-      }),
-    }));
+  const handleDelete = (id) => {
+    setContacts(contacts.filter((contact) => id !== contact.id));
   };
 
-  handleFilter = () => {
-    const { contacts, filter } = this.state;
+  const handleFilter = () => {
     const filterContacts = contacts.filter((el) =>
       el.name.toLowerCase().includes(filter.toLowerCase())
     );
     return filterContacts;
   };
+  console.log(contacts);
 
-  render() {
-    const { contacts, filter } = this.state;
-    return (
-      <>
-        <Toaster toastOptions={{ duration: 1500 }} />
-        <h1>Phonebook</h1>
-        <ContactForm getData={this.createContact} />
-        <h2>Contacts</h2>
-        <Filter getFilter={this.getFilterData} />
-        <ContactList
-          contacts={filter ? this.handleFilter() : contacts}
-          onDelete={this.handleDelete}
-        />
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <Toaster toastOptions={{ duration: 1500 }} />
+      <h1>Phonebook</h1>
+      <ContactForm getData={createContact} />
+      <h2>Contacts</h2>
+      <Filter getFilter={getFilterData} />
+      <ContactList
+        contacts={filter ? handleFilter() : contacts}
+        onDelete={handleDelete}
+      />
+    </>
+  );
+};
 
 export default App;
